@@ -9,6 +9,8 @@ import {
   Alert,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import Fontisto from "@expo/vector-icons/Fontisto";
 import { theme } from "./colors";
 import { useEffect, useState } from "react";
 
@@ -16,9 +18,10 @@ const STORAGE_KEY = "@toDos";
 const HEADER = "header";
 
 export default function App() {
-  const [working, setWorking] = useState(true); // 초기값은 false
+  const [working, setWorking] = useState(true);
   const [text, setText] = useState("");
   const [toDos, setToDos] = useState({});
+  const [editingKey, setEditingKey] = useState(null); // 수정할 항목의 키
 
   const travel = async () => {
     setWorking(false);
@@ -56,20 +59,23 @@ export default function App() {
   const getHeader = async () => {
     try {
       const storageWorking = await AsyncStorage.getItem(HEADER);
-      setWorking(storageWorking === "true"); // 문자열 "true"와 비교
+      setWorking(storageWorking === "true");
     } catch (error) {
       console.error(error);
     }
   };
 
   useEffect(() => {
-    getHeader(); // AsyncStorage에서 header 값을 가져옴
-    loadToDos(); // ToDo 목록을 불러옴
+    getHeader();
+    loadToDos();
   }, []);
 
   const addToDo = async () => {
     if (text === "") return;
-    const newToDos = { ...toDos, [Date.now()]: { text, working } };
+    const newToDos = {
+      ...toDos,
+      [Date.now()]: { text, working, finish: false },
+    };
     setToDos(newToDos);
     await saveToDos(newToDos);
     setText("");
@@ -89,6 +95,45 @@ export default function App() {
         },
       },
     ]);
+  };
+
+  // todo 완료 기능
+  const finishToDO = async (key) => {
+    const updatedTodo = {
+      ...toDos[key],
+      finish: !toDos[key].finish,
+    };
+
+    const newTodos = {
+      ...toDos,
+      [key]: updatedTodo,
+    };
+
+    setToDos(newTodos);
+    saveToDos(newTodos);
+  };
+
+  const startEditing = (key) => {
+    setEditingKey(key);
+    setText(toDos[key].text); // 수정할 항목의 텍스트로 상태 업데이트
+  };
+
+  // todo 수정 기능
+  const saveCorrection = async (key) => {
+    const updatedTodo = {
+      ...toDos[key],
+      text: text,
+    };
+
+    const newTodos = {
+      ...toDos,
+      [key]: updatedTodo,
+    };
+
+    setToDos(newTodos);
+    await saveToDos(newTodos);
+    setEditingKey(null); // 수정 모드 종료
+    setText(""); // 입력 필드 초기화
   };
 
   return (
@@ -124,10 +169,63 @@ export default function App() {
         {Object.keys(toDos).map((key) =>
           toDos[key].working === working ? (
             <View key={key} style={styles.todo}>
-              <Text style={styles.todoText}>{toDos[key].text}</Text>
-              <TouchableOpacity onPress={() => deleteToDo(key)}>
-                <Text>❌</Text>
-              </TouchableOpacity>
+              {editingKey === key ? (
+                <>
+                  <TextInput
+                    value={text}
+                    onChangeText={onChangeEvent}
+                    style={styles.corrInput}
+                    onSubmitEditing={() => saveCorrection(key)}
+                    returnKeyType="done"
+                    placeholder="correct a todo"
+                  />
+                  <TouchableOpacity onPress={() => saveCorrection(key)}>
+                    <Text style={{ color: "white" }}>save</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  <Text
+                    style={{
+                      ...styles.todoText,
+                      textDecorationLine: toDos[key].finish
+                        ? "line-through"
+                        : "none",
+                    }}
+                  >
+                    {toDos[key].text}
+                  </Text>
+                  <View style={styles.icons}>
+                    <TouchableOpacity onPress={() => startEditing(key)}>
+                      <FontAwesome
+                        name="pencil-square-o"
+                        size={24}
+                        color="white"
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => finishToDO(key)}>
+                      <Text>
+                        {toDos[key].finish ? (
+                          <Fontisto
+                            name="checkbox-active"
+                            size={20}
+                            color="white"
+                          />
+                        ) : (
+                          <Fontisto
+                            name="checkbox-passive"
+                            size={20}
+                            color="white"
+                          />
+                        )}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => deleteToDo(key)}>
+                      <Fontisto name="trash" size={20} color="white" />
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
             </View>
           ) : null
         )}
@@ -159,6 +257,12 @@ const styles = StyleSheet.create({
     marginVertical: 20,
     fontSize: 18,
   },
+  corrInput: {
+    flex: 1,
+    color: "green",
+    borderRadius: 15,
+    fontSize: 20,
+  },
   todo: {
     backgroundColor: theme.grey,
     marginBottom: 10,
@@ -168,6 +272,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  icons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
   todoText: {
     color: "white",
