@@ -1,6 +1,5 @@
 import { StatusBar } from "expo-status-bar";
 import {
-  StyleSheet,
   Text,
   View,
   TouchableOpacity,
@@ -11,8 +10,8 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Fontisto from "@expo/vector-icons/Fontisto";
-import { theme } from "./colors";
 import { useEffect, useState } from "react";
+import { styles } from "./styles";
 
 const STORAGE_KEY = "@toDos";
 const HEADER = "header";
@@ -233,54 +232,3 @@ export default function App() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.bg,
-    paddingHorizontal: 20,
-  },
-  header: {
-    justifyContent: "space-between",
-    marginTop: 100,
-    flexDirection: "row",
-  },
-  btnText: {
-    fontSize: 60,
-    fontWeight: "600",
-  },
-  input: {
-    backgroundColor: "white",
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 30,
-    marginVertical: 20,
-    fontSize: 18,
-  },
-  corrInput: {
-    flex: 1,
-    color: "green",
-    borderRadius: 15,
-    fontSize: 20,
-  },
-  todo: {
-    backgroundColor: theme.grey,
-    marginBottom: 10,
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    borderRadius: 15,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  icons: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  todoText: {
-    color: "white",
-    fontSize: 20,
-    fontWeight: "500",
-  },
-});
